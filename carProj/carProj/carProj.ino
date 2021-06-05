@@ -4,8 +4,8 @@
 
 #include "Arduino.h"
 #include <analogWrite.h>
-#define WIFI_SSID "ansoniphone" // change with your own wifi ssid
-#define WIFI_PASS "12345678" // change with your own wifi password
+#define WIFI_SSID "homewifi" // change with your own wifi ssid
+#define WIFI_PASS "61013122" // change with your own wifi password
 
 
 int Lmotor1Pin1 = 26; 
