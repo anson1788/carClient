@@ -4,8 +4,8 @@
 
 #include "Arduino.h"
 #include <analogWrite.h>
-#define WIFI_SSID "HOSK2018" // change with your own wifi ssid
-#define WIFI_PASS "94858500" // change with your own wifi password
+#define WIFI_SSID "ansoniphone" // change with your own wifi ssid
+#define WIFI_PASS "12345678" // change with your own wifi password
 
 
 int Lmotor1Pin1 = 26; 
@@ -25,11 +25,13 @@ bool isUp = false;
 bool isDown = false;
 bool isLeft = false;
 bool isRight = false;
+#define ONBOARD_LED  2
 
 char* websockets_server = "wss://9lq9qnim7i.execute-api.ap-east-1.amazonaws.com/production";
 using namespace websockets;
 WebsocketsClient client;
 
+bool isWifiConnected = false;
 
 void setup()
 {
@@ -49,6 +51,8 @@ void setup()
   ledcSetup(pwmChannel, freq, resolution);
   ledcAttachPin(Lenable1Pin, pwmChannel);
   ledcAttachPin(Renable1Pin, pwmChannel);
+
+  pinMode (ONBOARD_LED, OUTPUT);
   delay(100);
 }
 int counter = 0;
@@ -60,8 +64,11 @@ void loop() {
       client.send("{\"action\":\"update\",\"type\":\"car1\"}");
   }
 
-
-
+  if(isWifiConnected){
+     digitalWrite(ONBOARD_LED,HIGH);
+  }
+    
+      
       if(isUp) {
            up();
       }else if(isDown) {
@@ -76,7 +83,7 @@ void loop() {
           digitalWrite(Lmotor1Pin2, LOW);
           digitalWrite(Rmotor1Pin2, LOW);
       }
- 
+
  
 }
 
@@ -116,10 +123,10 @@ void down() {
 
   digitalWrite(Lmotor1Pin1, LOW);
   digitalWrite(Rmotor1Pin1, HIGH);
-    analogWrite(Lenable1Pin, 100);
+  analogWrite(Lenable1Pin, 100);
   digitalWrite(Lmotor1Pin2, HIGH);
   digitalWrite(Rmotor1Pin2, LOW);
-    analogWrite(Renable1Pin, 100);
+  analogWrite(Renable1Pin, 100);
 }
 void ConnectWebSocket(){
       client.setInsecure();
@@ -189,7 +196,28 @@ void onEventsCallback(WebsocketsEvent event, String data) {
 
 char connect()
 {
-  WiFi.begin(WIFI_SSID, WIFI_PASS); 
+
+    int n = WiFi.scanNetworks();
+    Serial.println("scan done");
+    if (n == 0) {
+        Serial.println("no networks found");
+    } else {
+        Serial.print(n);
+        Serial.println(" networks found");
+        for (int i = 0; i < n; ++i) {
+            // Print SSID and RSSI for each network found
+            Serial.print(i + 1);
+            Serial.print(": ");
+            Serial.print(WiFi.SSID(i));
+            Serial.print(" (");
+            Serial.print(WiFi.RSSI(i));
+            Serial.print(")");
+            Serial.println((WiFi.encryptionType(i) == WIFI_AUTH_OPEN)?" ":"*");
+            delay(10);
+        }
+    }
+
+      WiFi.begin(WIFI_SSID, WIFI_PASS); 
 
   Serial.println("Waiting for wifi");
   int timeout_s = 30;
@@ -201,12 +229,13 @@ char connect()
   if(WiFi.status() != WL_CONNECTED)
   {
     Serial.println("unable to connect, check your credentials");
-    return 0;
+    return connect();
   }
   else
   {
     Serial.println("Connected to the WiFi network");
     Serial.println(WiFi.localIP());
+    isWifiConnected = true;
     return 1;
   }
 }
